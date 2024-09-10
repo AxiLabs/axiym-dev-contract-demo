@@ -1,2 +1,6 @@
 # axiym-dev-contract-demo
-Pool Contracts
+FeederPool Contracts
+
+## deposit() - Deposits into FeederPool
+## withdrawAll() - Withdraws entire balance.
+## withdrawInterestPrincipal() - Withdraws a specified amount.
