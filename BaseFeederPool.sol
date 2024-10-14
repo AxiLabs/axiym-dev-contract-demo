@@ -17,28 +17,28 @@ import {Validators} from "../utils/Validators.sol";
 abstract contract BaseFeederPool is RewardLocker, IFeederPool {
     using SafeERC20 for IERC20;
 
-    IERC20 private immutable _liquidityAsset;
+    IERC20 internal immutable _liquidityAsset;
 
-    IMasterPool private immutable _masterPool;
+    IMasterPool internal immutable _masterPool;
     uint256 private _impairmentRank; // 0 = lowest rank.
 
     // Default share split (balance goes to devS)
-    uint256 private _depositorShare = 60;
+    uint256 internal _depositorShare = 60;
 
     // Boolean set to false when pool is fully impaired (can't be reversed)
-    bool private _active;
+    bool internal _active;
 
     // Governance booleans to control deposits and withdraws of interest and rewards
-    bool private _interestDepositsStatus = true; // allow deposits of interest
-    bool private _interestWithdrawStatus = true; // allow withdraws of interest
+    bool internal _interestDepositsStatus = true; // allow deposits of interest
+    bool internal _interestWithdrawStatus = true; // allow withdraws of interest
 
     // Registered InternalBridges
     mapping(address => bool) private _internalBridges;
 
     // Variables related to interest
-    mapping(address => uint256) private _depositorInterestUnits; // amount of units owed in interest pool
-    uint256 private _feederPoolValue; // the feeder pool value (updated by checking masterPool)
-    uint256 private _interestUnitTotal; // amount of units in interest pool
+    mapping(address => uint256) internal _depositorInterestUnits; // amount of units owed in interest pool
+    uint256 internal _feederPoolValue; // the feeder pool value (updated by checking masterPool)
+    uint256 internal _interestUnitTotal; // amount of units in interest pool
 
     // Operation Events
     event Deposited(
@@ -114,7 +114,9 @@ abstract contract BaseFeederPool is RewardLocker, IFeederPool {
         @dev    Lender depositing into the Feeder Pool.
         @param  amount_ Amount a lender wishes to deposit into the Feeder Pool.
     */
-    function deposit(uint256 amount_) external allowDeposit nonReentrant {
+    function deposit(
+        uint256 amount_
+    ) external virtual allowDeposit nonReentrant {
         if (!_interestDepositsStatus) revert InactiveDeposits(); // check pool open to deposits
         if (!_active) revert DeactivatePool(); // check pool not deactivated.
         Validators.isNonZero(amount_);
@@ -152,7 +154,7 @@ abstract contract BaseFeederPool is RewardLocker, IFeederPool {
     */
     function withdrawInterestPrincipal(
         uint256 amount_
-    ) external allowWithdraw nonReentrant {
+    ) external virtual allowWithdraw nonReentrant {
         if (!_interestWithdrawStatus) revert InactiveWithdraw(); // check pool open to withdraw
         if (!_active) revert DeactivatePool(); // check pool not deactivated.
         Validators.isNonZero(amount_);
@@ -181,7 +183,7 @@ abstract contract BaseFeederPool is RewardLocker, IFeederPool {
     /**
         @dev    Depositor wishes to withdraw everything.
     */
-    function withdrawAll() external allowWithdraw nonReentrant {
+    function withdrawAll() external virtual allowWithdraw nonReentrant {
         if (!_interestWithdrawStatus) revert InactiveWithdraw(); // check pool open to withdraw
         if (!_active) revert DeactivatePool(); // check pool not deactivated.
         Validators.isNonZero(_depositorInterestUnits[msg.sender]);
@@ -270,7 +272,7 @@ abstract contract BaseFeederPool is RewardLocker, IFeederPool {
     function _mintInterestUnits(
         address lenderAddress_,
         uint256 amount_
-    ) private returns (uint256) {
+    ) internal returns (uint256) {
         uint256 unitsMined = 0;
         // First depositor into feeder pool distributed same units as their principal
         if (_interestUnitTotal == 0) {
